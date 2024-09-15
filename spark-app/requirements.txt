@@ -1,0 +1,5 @@
+requests
+py4j
+kafka-python-ng
+pyspark
+six
