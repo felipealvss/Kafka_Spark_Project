@@ -23,7 +23,8 @@ topic = 'parquet-files'
 # URL base da API e parâmetros
 base_url = 'https://dadosabertos.aneel.gov.br/api/3/action/datastore_search'
 resource_id = '49fa9ca0-f609-4ae3-a6f7-b97bd0945a3a'
-query = 'GD.CE'
+#query = 'GD.CE' # Cenário menor de dados
+query = 'GD.DF' # Cenário menor de dados
 limit = 100  # Número de registros por página
 
 # Função para obter o total de registros
