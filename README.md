@@ -150,6 +150,16 @@ poetry run streamlit run streamlit.py
 
 Essa aplicação irá monitorar em tempo real a pasta `output/` e fornecer uma interface interativa para acompanhar o processo.
 
+## Imagens da Interface
+
+- **Aplicação Streamlit mapeando em tempo real o rietório de arquivos Parquet:**
+
+    <img src="docs/StreamlitParquets.png" alt="Interface Streamlit"/>
+
+- **Procucer e Consumer em execução nos terminais:**
+
+    <img src="docs/BashExecucao.png" alt="Bash com execuções"/>
+
 ## Considerações sobre a Arquitetura
 
 O pipeline de dados é baseado na comunicação entre um produtor e um consumidor via Kafka. O **Spark** é usado tanto para gerar os arquivos Parquet quanto para transformar os dados e gerar um novo arquivo Parquet. O uso do **Docker** garante que o ambiente seja replicável e que todos os serviços possam ser executados em containers isolados. O **Poetry** facilita o gerenciamento das dependências e o ambiente virtual, garantindo a consistência do projeto ao longo do tempo.
