@@ -16,6 +16,7 @@ O foco principal é o uso de tecnologias modernas de processamento de dados e st
 4. **Docker**: Ferramenta de containerização que garante que o ambiente de desenvolvimento seja replicável e isolado.
 5. **Zookeeper**: Utilizado para coordenação e gerenciamento do Kafka.
 6. **Streamlit**: Ferramenta para criação de aplicações web interativas que permite a visualização em tempo real dos dados processados, facilitando a análise e o monitoramento dos resultados de forma amigável e acessível.
+7. **Poetry**: Ferramenta para gerenciamento de dependências e ambientes virtuais, garantindo a consistência e a reprodutibilidade do ambiente de desenvolvimento.
 
 ## Arquitetura do Projeto
 
@@ -30,15 +31,17 @@ Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de pro
 ## Estrutura de Arquivos
 
 ```
-├── docker-compose.yml         # Orquestração dos containers Kafka, Zookeeper e Spark
+├── output                     # Diretório onde os arquivos Parquet serão armazenados
 ├── spark-app                  # Scripts Python para processamento de dados
 │   ├── api_to_parquet_kafka.py      # Extrai dados da API, salva como Parquet e envia ao Kafka
+│   └── Dockerfile                   # Configuração das imagens dos containers, instalação de dependências definidas em requirements.txt
 │   └── parquet_to_consumer.py       # Lê do Kafka, realiza transformações e converte/sobrepõe em Parquet
 │   └── parquet_to_csv_consumer.py   # Lê do Kafka e converte Parquet em CSV
-├── output                     # Diretório onde os arquivos Parquet serão armazenados
-├── streamlit.py               # Aplicação Streamlit para monitoramento em tempo real dos arquivos
-├── requirements.txt           # Dependências do projeto
+│   └── requirements.txt             # Dependências do docker Spark
+├── docker-compose.yml         # Orquestração dos containers Kafka, Zookeeper e Spark
+├── pyproject.toml             # Arquivo de configuração do Poetry
 ├── README.md                  # Instruções e informações do projeto
+├── streamlit.py               # Aplicação Streamlit para monitoramento em tempo real dos arquivos
 ```
 
 ## Tecnologias Utilizadas
@@ -49,6 +52,7 @@ Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de pro
 - **Python**: Linguagem de programação usada para automação e processamento de dados.
 - **Zookeeper**: Gerenciamento do Kafka.
 - **Streamlit**: Visualização em tempo real dos dados processados para análise e monitoramento.
+- **Poetry**: Gerenciamento de dependências e ambiente virtual.
 
 ## Pré-requisitos
 
@@ -60,6 +64,8 @@ Antes de executar o projeto, certifique-se de ter os seguintes componentes insta
    - [Instalar Docker Compose](https://docs.docker.com/compose/install/)
 3. **Git**: Para clonar o repositório.
    - [Instalar Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+4. **Poetry**: Para gerenciamento de dependências e criação de ambientes virtuais.
+   - [Instalar Poetry](https://python-poetry.org/docs/#installation)
 
 ## Passos para Configuração e Execução
 
@@ -68,11 +74,23 @@ Antes de executar o projeto, certifique-se de ter os seguintes componentes insta
 Clone o repositório para seu ambiente local:
 
 ```bash
-git clone https://github.com/usuario/projeto-kafka-spark.git
+git clone https://github.com/felipealvss/projeto-kafka-spark.git
 cd projeto-kafka-spark
 ```
 
-### 2. Subir os Containers com Docker
+### 2. Configurar o Ambiente com Poetry
+
+Instale o Poetry caso ainda não tenha, conforme mencionado na seção de pré-requisitos.
+
+Em seguida, para configurar o ambiente virtual e instalar todas as dependências do projeto, execute os comandos abaixo:
+
+```bash
+poetry install
+```
+
+Isso criará um ambiente virtual e instalará todas as dependências listadas no arquivo `pyproject.toml`.
+
+### 3. Subir os Containers com Docker
 
 Para obter as imagens dos serviços necessários (Kafka, Zookeper, Spark), execute:
 
@@ -98,7 +116,7 @@ Você pode verificar o status dos containers em execução com o comando:
 docker-compose ps
 ```
 
-### 3. Executar os Scripts de Processamento de Dados
+### 4. Executar os Scripts de Processamento de Dados
 
 #### Executar o Produtor (API para Parquet via Kafka)
 
@@ -122,28 +140,19 @@ docker exec -it z106-spark-1 python /app/parquet_to_consumer.py
 docker exec -it z106-spark-1 pip3 install requests, py4j, kafka-python-ng, pyspark, six
 ```
 
-### 4. Verificar a Saída
-O processo executa o seguinte fluxo:
+### 5. Executar a Interface de Visualização (Streamlit)
 
-- Os arquivos Parquet serão salvos na pasta `output/`.
-- Os novos arquivos Parquet gerados pelo consumidor também serão salvos na pasta `output/`.
-- O processo pode ser monitorado através de uma aplicação Streamlit, mostrando informaçoes agrupadas de dados para acompanhamento e validação.
-
-Você pode executar a aplicação Streamlit com o comando: (**)
+A aplicação Streamlit pode ser executada com o comando:
 
 ```bash
-streamlit run streamlit.py
+poetry run streamlit run streamlit.py
 ```
 
-** OBS.: Caso não possua as dependências necessárias para executar o Streamlit, executar o comando:
-
-```bash
-pip install streamlit pandas pyarrow matplotlib
-```
+Essa aplicação irá monitorar em tempo real a pasta `output/` e fornecer uma interface interativa para acompanhar o processo.
 
 ## Considerações sobre a Arquitetura
 
-O pipeline de dados é baseado na comunicação entre um produtor e um consumidor via Kafka. O **Spark** é usado tanto para gerar os arquivos Parquet quanto para transformar os dados e gerar um novo arquivo Parquet. O uso do **Docker** garante que o ambiente seja replicável e que todos os serviços possam ser executados em containers isolados.
+O pipeline de dados é baseado na comunicação entre um produtor e um consumidor via Kafka. O **Spark** é usado tanto para gerar os arquivos Parquet quanto para transformar os dados e gerar um novo arquivo Parquet. O uso do **Docker** garante que o ambiente seja replicável e que todos os serviços possam ser executados em containers isolados. O **Poetry** facilita o gerenciamento das dependências e o ambiente virtual, garantindo a consistência do projeto ao longo do tempo.
 
 Este projeto exemplifica uma solução escalável para o processamento de dados em streaming, que pode ser adaptada para grandes volumes de dados ou para diferentes fontes de dados, além de ser facilmente extensível para incluir outros tipos de transformação.
 
