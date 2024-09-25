@@ -152,7 +152,7 @@ Essa aplicação irá monitorar em tempo real a pasta `output/` e fornecer uma i
 
 ## Imagens da Interface
 
-- **Aplicação Streamlit mapeando em tempo real o rietório de arquivos Parquet:**
+- **Aplicação Streamlit mapeando em tempo real o diretório de arquivos Parquet:**
 
     <img src="docs/StreamlitParquets.png" alt="Interface Streamlit"/>
 
