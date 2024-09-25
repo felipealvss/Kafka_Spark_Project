@@ -105,7 +105,7 @@ docker-compose ps
 Este script realiza a extração de dados da API, os converte em Parquet e envia ao Kafka: (**)
 
 ```bash
-docker exec -it <nome_do_container_spark> python /app/api_to_parquet_kafka.py
+docker exec -it z106-spark-1 python /app/api_to_parquet_kafka.py
 ```
 
 #### Executar o Consumidor (Parquet para Parquet ajustado)
@@ -113,7 +113,7 @@ docker exec -it <nome_do_container_spark> python /app/api_to_parquet_kafka.py
 Este script consome os arquivos Parquet enviados ao Kafka, realiza ajustes e os converte para Parquet: (**)
 
 ```bash
-docker exec -it <nome_do_container_spark> python /app/parquet_to_consumer.py
+docker exec -it z106-spark-1 python /app/parquet_to_consumer.py
 ```
 
 ** OBS.: Caso não seja realizado a instalação das dependências presentes no arquivo 'requirements.txt', executar o comando:
