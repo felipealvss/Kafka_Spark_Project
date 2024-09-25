@@ -11,14 +11,15 @@ spark = SparkSession.builder \
     .appName("parquet_to_consumer") \
     .getOrCreate()
 
-# Consumer Kafka
+# Configuração do Kafka Consumer
 consumer = KafkaConsumer(
     'parquet-files',
-    bootstrap_servers='kafka:9093',  # "kafka" refere-se ao nome do serviço no docker-compose.yml
+    bootstrap_servers='kafka:9093',  # KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
     auto_offset_reset='earliest',
     enable_auto_commit=True,
     group_id='my-group')
 
+# Função para ajustar dados do arquivo .parquet
 def process_parquet(spark, parquet_file, output_parquet):
 
     print("Entrou na function")
@@ -70,20 +71,20 @@ def process_parquet(spark, parquet_file, output_parquet):
     print("Saiu da function")
     
 ############################################################ OLD CODE #############################################################
-     # # Gerar apenas um arquivo parquet com coalesce(1)
+    # Uso do coalesce para garantir que seja gerado apenas um arquivo
     temp_output_path = output_parquet + "_temp"
 
-    # # Escrevendo o parquet temporariamente
+    # Salvar como arquivo Parquet no diretório temporário
     df_.coalesce(1).write.mode("overwrite").parquet(temp_output_path)
 
-    # # Mover o arquivo parquet gerado do diretório temporário para o caminho final
+    # Mover arquivo .parquet para o diretório "output"
     for file_name in os.listdir(temp_output_path):
         if file_name.endswith(".parquet"):
             temp_file_path = os.path.join(temp_output_path, file_name)
             shutil.move(temp_file_path, output_parquet)
             break
 
-# # # Remover o diretório temporário
+    # Remover o diretório temporário
     shutil.rmtree(temp_output_path)
 
     print(f"Arquivo parquet gerado: {output_parquet}")
@@ -100,7 +101,7 @@ if __name__ == "__main__":
             # Definir o nome do parquet de saída
             output_parquet = os.path.join(output_folder, os.path.basename(parquet_file))
             
-            # Processar o arquivo Parquet e gerar parquet
+            # Processar o arquivo .parquet e gerar/sobrepor .parquet
             process_parquet(spark, parquet_file, output_parquet)
 
             print(f"Arquivo {output_parquet} criado com sucesso")

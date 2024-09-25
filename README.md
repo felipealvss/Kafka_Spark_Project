@@ -15,6 +15,7 @@ O foco principal é o uso de tecnologias modernas de processamento de dados e st
 3. **Apache Spark**: Framework usado para processar os dados e executar transformações complexas, além de converter formatos de dados (Parquet para Parquet ajustado).
 4. **Docker**: Ferramenta de containerização que garante que o ambiente de desenvolvimento seja replicável e isolado.
 5. **Zookeeper**: Utilizado para coordenação e gerenciamento do Kafka.
+6. **Streamlit**: Ferramenta para criação de aplicações web interativas que permite a visualização em tempo real dos dados processados, facilitando a análise e o monitoramento dos resultados de forma amigável e acessível.
 
 ## Arquitetura do Projeto
 
@@ -22,8 +23,9 @@ A estrutura do projeto envolve dois scripts principais que trabalham em conjunto
 
 1. **Produtor de Dados (API para Parquet via Kafka)**: Extrai dados de uma API pública, salva-os em formato Parquet e envia as referências dos arquivos para o Kafka.
 2. **Consumidor de Dados (Parquet para Parquet ajustado)**: Escuta o tópico Kafka, consome os arquivos Parquet, ajusta os dados e armazena o resultado em novo Parquet.
+3. **Interface de Visualização (Streamlit)**: Uma aplicação web que se conecta ao sistema para visualizar os dados processados em tempo real, permitindo aos usuários monitorar e analisar os resultados de forma interativa e amigável.
 
-Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de processamento assíncrono que simula um fluxo de dados em tempo real.
+Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de processamento assíncrono que simula um fluxo de dados em tempo real. O Streamlit complementa esse fluxo ao fornecer uma interface visual para a exploração dos dados, facilitando a tomada de decisões informadas.
 
 ## Estrutura de Arquivos
 
@@ -34,6 +36,8 @@ Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de pro
 │   └── parquet_to_consumer.py       # Lê do Kafka, realiza transformações e converte/sobrepõe em Parquet
 │   └── parquet_to_csv_consumer.py   # Lê do Kafka e converte Parquet em CSV
 ├── output                     # Diretório onde os arquivos Parquet serão armazenados
+├── streamlit.py               # Aplicação Streamlit para monitoramento em tempo real dos arquivos
+├── requirements.txt           # Dependências do projeto
 ├── README.md                  # Instruções e informações do projeto
 ```
 
@@ -44,6 +48,7 @@ Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de pro
 - **Docker**: Criação de ambientes isolados e consistentes para execução dos serviços.
 - **Python**: Linguagem de programação usada para automação e processamento de dados.
 - **Zookeeper**: Gerenciamento do Kafka.
+- **Streamlit**: Visualização em tempo real dos dados processados para análise e monitoramento.
 
 ## Pré-requisitos
 
@@ -118,9 +123,23 @@ docker exec -it z106-spark-1 pip3 install requests, py4j, kafka-python-ng, pyspa
 ```
 
 ### 4. Verificar a Saída
+O processo executa o seguinte fluxo:
 
 - Os arquivos Parquet serão salvos na pasta `output/`.
 - Os novos arquivos Parquet gerados pelo consumidor também serão salvos na pasta `output/`.
+- O processo pode ser monitorado através de uma aplicação Streamlit, mostrando informaçoes agrupadas de dados para acompanhamento e validação.
+
+Você pode executar a aplicação Streamlit com o comando: (**)
+
+```bash
+streamlit run streamlit.py
+```
+
+** OBS.: Caso não possua as dependências necessárias para executar o Streamlit, executar o comando:
+
+```bash
+pip install streamlit pandas pyarrow matplotlib
+```
 
 ## Considerações sobre a Arquitetura
 
@@ -134,9 +153,9 @@ Este projeto pode ser expandido para incluir mais funcionalidades, como processa
 
 ### Equipe de projeto:
 
-- Benício Bezerra de Abreu Carneiro (Matrícula: 2419566-0)
-- Felipe Alves da Silva (Matrícula: 2329032)
-- Gabriel Façanha Leal (Matrícula: 2328556)
-- Marcos Andre Pires da Silva Junior (Matrícula: 2419159)
+- [Benício Bezerra de Abreu Carneiro](https://github.com/becarneiro) (Matrícula: 2419566-0)
+- [Felipe Alves da Silva](https://github.com/felipealvss) (Matrícula: 2329032)
+- [Gabriel Façanha Leal](https://github.com/gabriel1305) (Matrícula: 2328556)
+- [Marcos Andre Pires da Silva Junior](https://github.com/DavidPiires) (Matrícula: 2419159)
 
 ---

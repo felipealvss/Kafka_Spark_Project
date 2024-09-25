@@ -8,7 +8,7 @@ import shutil
 import os
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 
-# Configurando o Spark
+# Configuração do Spark
 spark = SparkSession.builder \
     .appName("APIToParquet") \
     .config("spark.executor.memory", "4g") \
@@ -16,11 +16,12 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # Configuração do Kafka Producer
-producer = KafkaProducer(bootstrap_servers='kafka:9093', # "kafka" refere-se ao nome do serviço no docker-compose.yml 
-                         request_timeout_ms=120000)  # Timeout de 120 segundos
+producer = KafkaProducer(
+    bootstrap_servers='kafka:9093', # KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
+    request_timeout_ms=120000)  # Timeout de 120 seg
 topic = 'parquet-files'
 
-# URL base da API e parâmetros
+# Informações da API e parâmetros
 base_url = 'https://dadosabertos.aneel.gov.br/api/3/action/datastore_search'
 resource_id = '49fa9ca0-f609-4ae3-a6f7-b97bd0945a3a'
 #query = 'GD.CE' # Cenário maior de dados
@@ -64,6 +65,7 @@ def fetch_data(offset):
             time.sleep(delay)
     return None  # Retorna None se falhar após tentativas
 
+# Estrutura inicial dos dados
 schema = StructType([
     StructField("_id", IntegerType(), True),
     StructField("DatGeracaoConjuntoDados", StringType(), True),
@@ -83,19 +85,18 @@ schema = StructType([
 
 # Função para salvar dados em Parquet e enviar para Kafka
 def save_to_parquet(spark, data, batch_number, producer, topic):
-    # Criar DataFrame do PySpark a partir dos dados
+    # Estratégia: Criar DataFrame do PySpark a partir dos dados
     records = data['result']['records']
     df = spark.createDataFrame(records, schema)
 
-    # Coalesce para garantir que seja gerado apenas um arquivo
+    # Uso do coalesce para garantir que seja gerado apenas um arquivo
     temp_output_path = f"/output/temp_data_batch_{batch_number}"
     final_output_path = f"/output/data_batch_{batch_number}.parquet"
 
     # Salvar como arquivo Parquet no diretório temporário
     df.coalesce(1).write.mode("overwrite").parquet(temp_output_path)
 
-    # Mover o arquivo .parquet gerado para o diretório /output
-    # Isso considera que o nome do arquivo dentro do diretório temporário pode variar
+    # Mover arquivo .parquet para o diretório "output"
     for file_name in os.listdir(temp_output_path):
         if file_name.endswith(".parquet"):
             temp_file_path = os.path.join(temp_output_path, file_name)
@@ -107,7 +108,7 @@ def save_to_parquet(spark, data, batch_number, producer, topic):
 
     print(f"Arquivo parquet salvo: {final_output_path}")
 
-    # Enviar o caminho do arquivo Parquet para o Kafka
+    # Enviar o caminho do arquivo .parquet para o Kafka
     try:
         print('Preparando send...')
         producer.send(topic, final_output_path.encode('utf-8'))
@@ -138,7 +139,7 @@ def fetch_all_data(total_records, limit):
             except Exception as e:
                 print(f'Erro ao processar o futuro para o offset {futures[future]}: {e}')
 
-# Função principal para iniciar o processo
+# Função main para iniciar o processo
 if __name__ == "__main__":
     # Obter o total de registros da API
     total_records = get_total_records()
