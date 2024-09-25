@@ -18,6 +18,32 @@ O foco principal é o uso de tecnologias modernas de processamento de dados e st
 6. **Streamlit**: Ferramenta para criação de aplicações web interativas que permite a visualização em tempo real dos dados processados, facilitando a análise e o monitoramento dos resultados de forma amigável e acessível.
 7. **Poetry**: Ferramenta para gerenciamento de dependências e ambientes virtuais, garantindo a consistência e a reprodutibilidade do ambiente de desenvolvimento.
 
+## Detalhes sobre a API
+
+Os dados utilizados no projeto são extraídos da **API de Dados Abertos da ANEEL**, que disponibiliza informações sobre empreendimentos de Mini e Micro Geração Distribuída, regulamentados pela Resolução Normativa nº 482/2012. Os dados incluem variáveis como distribuidora conectada, código do empreendimento, potência instalada, fabricantes de módulos solares e inversores, data de conexão, entre outros.
+
+### Pontos de Acesso da API
+
+- **Link da API**: [https://dadosabertos.aneel.gov.br/dataset/relacao-de-empreendimentos-de-geracao-distribuida](https://dadosabertos.aneel.gov.br/dataset/relacao-de-empreendimentos-de-geracao-distribuida)
+- **Exemplos de Consultas**:
+    - Consultar os primeiros 5 resultados:  
+      `https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id=49fa9ca0-f609-4ae3-a6f7-b97bd0945a3a&limit=5`
+    - Consultar resultados contendo "jones":  
+      `https://dadosabertos.aneel.gov.br/api/3/action/datastore_search?resource_id=49fa9ca0-f609-4ae3-a6f7-b97bd0945a3a&q=jones`
+    - Consulta via SQL:  
+      `https://dadosabertos.aneel.gov.br/api/3/action/datastore_search_sql?sql=SELECT * from "49fa9ca0-f609-4ae3-a6f7-b97bd0945a3a" WHERE title LIKE 'jones'`
+  
+No projeto, os dados são extraídos através do endpoint de consulta, usando o seguinte código base:
+
+```python
+base_url = 'https://dadosabertos.aneel.gov.br/api/3/action/datastore_search'
+resource_id = '49fa9ca0-f609-4ae3-a6f7-b97bd0945a3a'
+query = 'GD.DF'
+limit = 100  # Número de registros por página
+```
+
+A consulta retorna um conjunto de dados estruturados, que são então processados pelo pipeline de dados para fins de normalização e transformação.
+
 ## Arquitetura do Projeto
 
 A estrutura do projeto envolve dois scripts principais que trabalham em conjunto para realizar o fluxo de dados:
