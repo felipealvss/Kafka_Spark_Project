@@ -1,6 +1,9 @@
 # Usar a imagem oficial do Spark com Hadoop
 FROM bitnami/spark:latest
 
+# Adicionar o pacote Kafka para integração com Spark
+ENV PACKAGES="org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.2"
+
 # Definir variáveis de ambiente
 ENV SPARK_HOME /opt/spark
 ENV PATH $SPARK_HOME/bin:$PATH

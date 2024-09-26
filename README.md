@@ -10,13 +10,16 @@ O foco principal é o uso de tecnologias modernas de processamento de dados e st
 
 ### Principais Componentes do Projeto:
 
+### Principais Componentes do Projeto:
+
 1. **API Pública**: Origem dos dados que serão processados.
 2. **Apache Kafka**: Middleware que permite a comunicação assíncrona entre os componentes do sistema (produtores e consumidores).
 3. **Apache Spark**: Framework usado para processar os dados e executar transformações complexas, além de converter formatos de dados (Parquet para Parquet ajustado).
-4. **Docker**: Ferramenta de containerização que garante que o ambiente de desenvolvimento seja replicável e isolado.
-5. **Zookeeper**: Utilizado para coordenação e gerenciamento do Kafka.
-6. **Streamlit**: Ferramenta para criação de aplicações web interativas que permite a visualização em tempo real dos dados processados, facilitando a análise e o monitoramento dos resultados de forma amigável e acessível.
-7. **Poetry**: Ferramenta para gerenciamento de dependências e ambientes virtuais, garantindo a consistência e a reprodutibilidade do ambiente de desenvolvimento.
+4. **Spark Streaming**: Extensão do Spark que permite o processamento contínuo de fluxos de dados.
+5. **Docker**: Ferramenta de containerização que garante que o ambiente de desenvolvimento seja replicável e isolado.
+6. **Zookeeper**: Utilizado para coordenação e gerenciamento do Kafka.
+7. **Streamlit**: Ferramenta para criação de aplicações web interativas que permite a visualização em tempo real dos dados processados, facilitando a análise e o monitoramento dos resultados de forma amigável e acessível.
+8. **Poetry**: Ferramenta para gerenciamento de dependências e ambientes virtuais, garantindo a consistência e a reprodutibilidade do ambiente de desenvolvimento.
 
 ## Detalhes sobre a API
 
@@ -50,7 +53,8 @@ A estrutura do projeto envolve dois scripts principais que trabalham em conjunto
 
 1. **Produtor de Dados (API para Parquet via Kafka)**: Extrai dados de uma API pública, salva-os em formato Parquet e envia as referências dos arquivos para o Kafka.
 2. **Consumidor de Dados (Parquet para Parquet ajustado)**: Escuta o tópico Kafka, consome os arquivos Parquet, ajusta os dados e armazena o resultado em novo Parquet.
-3. **Interface de Visualização (Streamlit)**: Uma aplicação web que se conecta ao sistema para visualizar os dados processados em tempo real, permitindo aos usuários monitorar e analisar os resultados de forma interativa e amigável.
+3. **Produtor de Dados com Spark Streaming**: Utiliza o Spark Streaming para extrair dados da API e processá-los em tempo real, salvando os resultados em formato Parquet e enviando para o Kafka.
+4. **Interface de Visualização (Streamlit)**: Uma aplicação web que se conecta ao sistema para visualizar os dados processados em tempo real, permitindo aos usuários monitorar e analisar os resultados de forma interativa e amigável.
 
 Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de processamento assíncrono que simula um fluxo de dados em tempo real. O Streamlit complementa esse fluxo ao fornecer uma interface visual para a exploração dos dados, facilitando a tomada de decisões informadas.
 
@@ -60,6 +64,7 @@ Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de pro
 ├── output                     # Diretório onde os arquivos Parquet serão armazenados
 ├── spark-app                  # Scripts Python para processamento de dados
 │   ├── api_to_parquet_kafka.py      # Extrai dados da API, salva como Parquet e envia ao Kafka
+│   ├── api_to_parquet_kafka_streaming.py  # Utiliza Spark Streaming para processar dados em tempo real e enviar ao Kafka
 │   └── Dockerfile                   # Configuração das imagens dos containers, instalação de dependências definidas em requirements.txt
 │   └── parquet_to_consumer.py       # Lê do Kafka, realiza transformações e converte/sobrepõe em Parquet
 │   └── parquet_to_csv_consumer.py   # Lê do Kafka e converte Parquet em CSV
@@ -74,6 +79,7 @@ Esses componentes se comunicam via tópicos no Kafka, criando um pipeline de pro
 
 - **Apache Kafka**: Streaming e gerenciamento de mensagens entre serviços.
 - **Apache Spark**: Processamento distribuído e conversão de dados em larga escala.
+- **Spark Streaming**: Processamento contínuo de fluxos de dados em tempo real.
 - **Docker**: Criação de ambientes isolados e consistentes para execução dos serviços.
 - **Python**: Linguagem de programação usada para automação e processamento de dados.
 - **Zookeeper**: Gerenciamento do Kafka.
@@ -142,7 +148,15 @@ Você pode verificar o status dos containers em execução com o comando:
 docker-compose ps
 ```
 
-### 4. Executar os Scripts de Processamento de Dados
+### 4. Criar Tópico no Kafka
+
+Antes de executar o script de streaming, crie um tópico no Kafka onde os arquivos Parquet serão enviados:
+
+```bash
+docker exec -it z106-kafka-1 kafka-topics.sh --create --topic nome_do_topico --bootstrap-server kafka:9092 --replication-factor 1 --partitions 1
+```
+
+### 5. Executar os Scripts de Processamento de Dados
 
 #### Executar o Produtor (API para Parquet via Kafka)
 
@@ -150,6 +164,12 @@ Este script realiza a extração de dados da API, os converte em Parquet e envia
 
 ```bash
 docker exec -it z106-spark-1 python /app/api_to_parquet_kafka.py
+```
+
+Se preferir, você pode executar o script que utiliza o Spark Streaming para processar dados em tempo real:
+
+```bash
+docker exec -it z106-spark-1 spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.2 /app/api_to_parquet_kafka_streaming.py
 ```
 
 #### Executar o Consumidor (Parquet para Parquet ajustado)
