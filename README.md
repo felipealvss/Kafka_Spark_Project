@@ -186,7 +186,7 @@ docker exec -it z106-spark-1 python /app/parquet_to_consumer.py
 docker exec -it z106-spark-1 pip3 install requests, py4j, kafka-python-ng, pyspark, six
 ```
 
-### 5. Executar a Interface de Visualização (Streamlit)
+### 6. Executar a Interface de Visualização (Streamlit)
 
 A aplicação Streamlit pode ser executada com o comando:
 
