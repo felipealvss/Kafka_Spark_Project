@@ -14,16 +14,34 @@ spark = SparkSession.builder \
 # Configuração do Kafka Consumer
 consumer = KafkaConsumer(
     'parquet-files',
-    bootstrap_servers='kafka:9093',  # KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
+    bootstrap_servers='kafka:9093',
     auto_offset_reset='earliest',
     enable_auto_commit=True,
     group_id='my-group')
 
+# Função para aguardar o arquivo Parquet ser criado
+def wait_for_file(parquet_file):
+    print(f"Aguardando o arquivo: {parquet_file}")
+    start_time = time.time()
+    while not os.path.exists(parquet_file):
+        if time.time() - start_time > 30:  # Timeout de 30 segundos
+            print(f"Timeout: O arquivo {parquet_file} não foi encontrado.")
+            return False
+        time.sleep(1)  # Espera 1 segundo antes de verificar novamente
+    print(f"Arquivo {parquet_file} encontrado.")
+    return True
+
 # Função para ajustar dados do arquivo .parquet
 def process_parquet(spark, parquet_file, output_parquet):
-
     print("Entrou na function")
+    
+    # Aguarda o arquivo ser criado
+    if not wait_for_file(parquet_file):
+        print(f"Arquivo {parquet_file} não disponível. Saindo da função.")
+        return
+
     # Lendo o arquivo Parquet com PySpark
+    start_time = time.time()
     df = spark.read.parquet(parquet_file)
 
     df_ = df.dropDuplicates()
@@ -43,18 +61,15 @@ def process_parquet(spark, parquet_file, output_parquet):
             columns_with_prefix = [col_name for col_name in df_.columns if col_name.startswith(prefix)]
             
             for column in columns_with_prefix:
-
                 if column.startswith("Mda"):
                     df_ = df_.withColumn(column, regexp_replace(col(column), ",", "."))
-                                    
                 df_ = df_.withColumn(column, col(column).cast(dtype))
         
         return df_
 
     df_ = change_column_types(df_, prefixes_to_types)
 
-    #Corrigindo valores vazios por nulos
-
+    # Corrigindo valores vazios por nulos
     df_.createOrReplaceTempView("temp")
 
     for col_ in df_.columns:
@@ -63,13 +78,10 @@ def process_parquet(spark, parquet_file, output_parquet):
         if not null_check.isEmpty():
             df_ = df_.withColumn(
                 col_,
-                when(
-                    trim(col(col_)) == '',
-                    None
-                ).otherwise(col(col_))
+                when(trim(col(col_)) == '', None).otherwise(col(col_))
             )
     print("Saiu da function")
-    
+
 ############################################################ OLD CODE #############################################################
     # Uso do coalesce para garantir que seja gerado apenas um arquivo
     temp_output_path = output_parquet + "_temp"
@@ -88,6 +100,8 @@ def process_parquet(spark, parquet_file, output_parquet):
     shutil.rmtree(temp_output_path)
 
     print(f"Arquivo parquet gerado: {output_parquet}")
+    end_time = time.time()
+    print(f"Tempo de processo {parquet_file}: {end_time - start_time:.2f} seg.")
 
 if __name__ == "__main__":
     output_folder = '/output/'  # Diretório mapeado no Docker

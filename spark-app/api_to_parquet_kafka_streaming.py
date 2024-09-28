@@ -71,7 +71,7 @@ def fetch_data(offset):
     delay = 5
     for attempt in range(retries):
         try:
-            response = req.get(url, timeout=10)  # Aumentar o timeout
+            response = req.get(url, timeout=10) # Aumentar o timeout
             if response.status_code == 200:
                 return response.json()
             else:
@@ -82,36 +82,13 @@ def fetch_data(offset):
             time.sleep(delay)
     return None  # Retorna None se falhar após tentativas
 
-# Função para buscar e processar dados da API
-def fetch_all_data(total_records, limit):
-    offsets = range(0, total_records, limit)
-    batch_number = 0
-
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        futures = {executor.submit(fetch_data, offset): offset for offset in offsets}
-
-        for future in as_completed(futures):
-            try:
-                data = future.result()
-                if data:
-                    print(f'Processando dados para o offset: {futures[future]}')  # Log adicional
-                    records = data['result']['records']
-                    rdd = spark.sparkContext.parallelize(records)
-                    save_to_parquet_streaming(spark, rdd, batch_number, producer, topic)
-                    batch_number += 1
-                else:
-                    print(f'Nenhum dado retornado para o offset {futures[future]}')
-            except Exception as e:
-                print(f'Erro ao processar o futuro para o offset {futures[future]}: {e}')
-
-# Função para salvar dados em Parquet e enviar para Kafka no modo streaming
-def save_to_parquet_streaming(spark, rdd, batch_id, producer, topic):
-    # Verifica se o RDD tem dados
-    if not rdd.isEmpty():
-        # Converte o RDD para DataFrame com o esquema
+# Função para salvar dados em Parquet e enviar para Kafka
+def save_to_parquet(spark, records, batch_id):
+    if records:
+        rdd = spark.sparkContext.parallelize(records)
         df = spark.createDataFrame(rdd, schema=schema)
 
-        # Gera os caminhos para salvar os arquivos
+        # Diretório temporário
         temp_output_path = f"/output/temp_data_batch_{batch_id}"
         final_output_path = f"/output/data_batch_{batch_id}.parquet"
 
@@ -132,15 +109,30 @@ def save_to_parquet_streaming(spark, rdd, batch_id, producer, topic):
 
         # Enviar o caminho do arquivo .parquet para o Kafka
         try:
-            print('Preparando send...')
             producer.send(topic, final_output_path.encode('utf-8'))
-            print('Send realizado.')
             producer.flush()
             print(f'Arquivo {final_output_path} enviado para Kafka.')
         except Exception as e:
             print(f'Erro ao enviar o arquivo {final_output_path} para o Kafka: {e}')
     else:
         print(f"Lote {batch_id} vazio. Nenhum dado para processar.")
+
+# Função para buscar e processar dados da API
+def fetch_all_data(total_records):
+    offsets = range(0, total_records, limit)
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(fetch_data, offset): offset for offset in offsets}
+        for batch_number, future in enumerate(as_completed(futures)):
+            try:
+                data = future.result()
+                if data:
+                    print(f'Processando dados para o offset: {futures[future]}')
+                    records = data['result']['records']
+                    save_to_parquet(spark, records, batch_number)
+                else:
+                    print(f'Nenhum dado retornado para o offset {futures[future]}')
+            except Exception as e:
+                print(f'Erro ao processar o futuro para o offset {futures[future]}: {e}')
 
 # Configuração de streaming do Spark a partir do Kafka
 df_stream = spark \
@@ -155,7 +147,7 @@ df_stream = spark \
 df_stream = df_stream.selectExpr("CAST(value AS STRING)")
 
 # Conversão do DataFrame do stream em RDD e aplicação da função em cada micro-batch
-df_stream.writeStream.foreachBatch(lambda batch_df, batch_id: save_to_parquet_streaming(spark, batch_df.rdd, batch_id, producer, topic)).start()
+df_stream.writeStream.foreachBatch(lambda batch_df, batch_id: save_to_parquet(spark, batch_df.rdd.collect(), batch_id)).start()
 
 # Função main para iniciar o processo
 if __name__ == "__main__":
@@ -164,11 +156,11 @@ if __name__ == "__main__":
     print(f'Total de registros disponíveis: {total_records}')
 
     # Obter todos os dados e processar
-    fetch_all_data(total_records, limit)
+    fetch_all_data(total_records)
 
     # Fechar o producer do Kafka
     producer.close()
-
+    
     print('Processamento completo!')
 
 # Mantém o streaming ativo até ser interrompido
